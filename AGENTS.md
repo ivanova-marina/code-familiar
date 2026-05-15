@@ -4,14 +4,53 @@
 
 Code Familiar is a TypeScript-based CLI agent for reviewing frontend pull requests.
 
-The first goal is a small working MVP:
+Do not over-engineer. Prefer small, understandable changes.
+Always focus on the earliest incomplete milestone unless explicitly instructed otherwise.
 
-- read the current Git diff
-- send the diff to an LLM
-- return structured PR review feedback
-- print the review in the terminal
+## Development Milestones
+
+### Milestone 1 — CLI Skeleton
+
+- Implement `code-familiar review`
+- Print a startup message
+- Read and print `git diff`
+
+### Milestone 2 — LLM Integration
+
+- Send the diff to the OpenAI API
+- Return a simple text review
+
+### Milestone 3 — Structured Output
+
+- Define Zod schemas
+- Validate model responses
+- Render formatted terminal output
+
+### Milestone 4 — Tool-Aware Agent
+
+- Read changed files
+- Provide additional context to the model
+
+### Milestone 5 — Agent Loop
+
+- Allow the model to request tools iteratively
+- Continue until a final review is produced
+
+### Milestone 6 — Evals
+
+- Create sample diffs and expected review outputs
+- Measure review quality
+
+### Milestone 7 — Human Approval
+
+- Require confirmation before high-impact actions
+
+### Milestone 8 — Web Dashboard (Optional)
+
+- Build a React/Next.js UI for viewing reviews and evals
 
 Do not over-engineer. Prefer small, understandable changes.
+Always focus on the earliest incomplete milestone unless explicitly instructed otherwise.
 
 ## Tech Stack
 
@@ -46,19 +85,20 @@ src/
 
 Use these commands when relevant:
 
-- npm run dev -- review
-- npm run build
-- npm run test
-  Do not assume additional scripts exist unless package.json confirms them.
+- `npm run dev -- review`
+- `npm run build`
+- `npm run test`
+
+Do not assume additional scripts exist unless `package.json` confirms them.
 
 ## Coding Standards
 
 - Use strict TypeScript.
 - Prefer small pure functions.
 - Keep CLI parsing separate from agent logic.
-- Keep external tool calls inside src/tools.
-- Keep prompts inside src/agent/prompts.ts.
-- Keep response schemas inside src/agent/schemas.ts.
+- Keep external tool calls inside `src/tools`.
+- Keep prompts inside `src/agent/prompts.ts`.
+- Keep response schemas inside `src/agent/schemas.ts`.
 - Use async/await.
 - Avoid any unless there is a strong reason.
 - Prefer explicit return types for exported functions.
@@ -95,7 +135,7 @@ Never:
 - delete files
 - rewrite large parts of the project
 - post GitHub comments
-- modify .env
+- modify `.env`
 - expose API keys or secrets
 
 Ask before:
@@ -108,9 +148,9 @@ Ask before:
 
 ## Environment
 
-The project may use an .env file with:
+The project may use an `.env` file with:
 
-```Bash
+```bash
 OPENAI_API_KEY=...
 ```
 
@@ -122,8 +162,9 @@ When changing behavior:
 
 - add or update tests where practical
 - run relevant tests if available
-- run npm run build for TypeScript correctness
-- For early MVP tasks, it is acceptable to explain when tests were skipped and why.
+- run `npm run build` for TypeScript correctness
+
+For early MVP tasks, it is acceptable to explain when tests were skipped and why.
 
 ## Definition of Done
 
@@ -147,3 +188,13 @@ When making changes, summarize:
 - what to check next
 
 Prefer incremental progress over large rewrites.
+
+## Preferred Workflow
+
+When implementing a task:
+
+1. Understand the current milestone.
+2. Make the smallest reasonable change.
+3. Run `npm run build`.
+4. Run relevant tests if available.
+5. Summarize the result.
