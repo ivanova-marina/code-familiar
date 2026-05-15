@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+coverage/
+.vitest/
+
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# macOS
+.DS_Store
+
+# Editors and IDEs
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+
+# TypeScript
+*.tsbuildinfo
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Misc
+.cache/
+
+# Optional local configuration
+.local/
+
+# Generated evaluation outputs (future)
+eval-results/
+reports/
+
+# Optional screenshots or artifacts
+artifacts/
