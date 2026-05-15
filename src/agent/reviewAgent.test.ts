@@ -23,7 +23,10 @@ describe('reviewDiff', () => {
     const create = vi.fn().mockResolvedValue({ output_text: '\n  Great.\n' });
     const client = { responses: { create } };
 
-    const result = await reviewDiff('diff --git a/a b/a\n', { model: 'gpt-4.1-mini', client });
+    const result = await reviewDiff('diff --git a/a b/a\n', {
+      model: 'gpt-4.1-mini',
+      client,
+    });
 
     expect(result).toBe('Great.');
   });
@@ -32,18 +35,17 @@ describe('reviewDiff', () => {
     const create = vi.fn();
     const client = { responses: { create } };
 
-    await expect(reviewDiff('   \n', { model: 'gpt-4.1-mini', client })).rejects.toThrow(
-      /No diff provided\./,
-    );
+    await expect(
+      reviewDiff('   \n', { model: 'gpt-4.1-mini', client }),
+    ).rejects.toThrow(/No diff provided\./);
   });
 
   it('throws if OpenAI returns an empty review', async () => {
     const create = vi.fn().mockResolvedValue({ output_text: '   \n' });
     const client = { responses: { create } };
 
-    await expect(reviewDiff('diff --git a/a b/a\n', { model: 'gpt-4.1-mini', client })).rejects.toThrow(
-      /empty review/i,
-    );
+    await expect(
+      reviewDiff('diff --git a/a b/a\n', { model: 'gpt-4.1-mini', client }),
+    ).rejects.toThrow(/empty review/i);
   });
 });
-

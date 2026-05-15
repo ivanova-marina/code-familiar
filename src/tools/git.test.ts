@@ -11,7 +11,9 @@ describe('getGitDiff', () => {
   it('runs git diff and returns stdout', async () => {
     const execaMock = vi.mocked(execa);
     type ExecaReturn = Awaited<ReturnType<typeof execa>>;
-    execaMock.mockResolvedValueOnce({ stdout: 'diff-output' } as unknown as ExecaReturn);
+    execaMock.mockResolvedValueOnce({
+      stdout: 'diff-output',
+    } as unknown as ExecaReturn);
 
     const diff = await getGitDiff();
 
@@ -26,7 +28,9 @@ describe('getGitDiff', () => {
   it('supports staged diffs', async () => {
     const execaMock = vi.mocked(execa);
     type ExecaReturn = Awaited<ReturnType<typeof execa>>;
-    execaMock.mockResolvedValueOnce({ stdout: 'staged-diff' } as unknown as ExecaReturn);
+    execaMock.mockResolvedValueOnce({
+      stdout: 'staged-diff',
+    } as unknown as ExecaReturn);
 
     const diff = await getGitDiff({ staged: true });
 
@@ -45,4 +49,3 @@ describe('getGitDiff', () => {
     await expect(getGitDiff()).rejects.toThrow(/Failed to read git diff\./);
   });
 });
-

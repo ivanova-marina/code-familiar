@@ -7,7 +7,10 @@ export type ReviewOptions = {
   client?: OpenAIClient;
 };
 
-export async function reviewDiff(diff: string, options: ReviewOptions): Promise<string> {
+export async function reviewDiff(
+  diff: string,
+  options: ReviewOptions,
+): Promise<string> {
   if (diff.trim().length === 0) {
     throw new Error('No diff provided.');
   }

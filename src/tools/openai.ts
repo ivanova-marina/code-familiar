@@ -11,7 +11,9 @@ let openAIClient: OpenAIClient | null = null;
 export function getOpenAIClient(): OpenAIClient {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    throw new Error('Missing OPENAI_API_KEY. Set it in your environment (or .env).');
+    throw new Error(
+      'Missing OPENAI_API_KEY. Set it in your environment (or .env).',
+    );
   }
 
   if (openAIClient) return openAIClient;
@@ -22,7 +24,7 @@ export function getOpenAIClient(): OpenAIClient {
 
 export function getConfiguredModel(cliModel: string | undefined): string {
   if (!cliModel) {
-    return process.env.CODE_FAMILIAR_MODEL ?? 'gpt-4.1-mini'
+    return process.env.CODE_FAMILIAR_MODEL ?? 'gpt-4.1-mini';
   }
-  return cliModel
+  return cliModel;
 }

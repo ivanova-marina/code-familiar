@@ -62,12 +62,16 @@ export type GitDiffOptions = {
   staged?: boolean;
 };
 
-export async function getGitDiff(options: GitDiffOptions = {}): Promise<string> {
+export async function getGitDiff(
+  options: GitDiffOptions = {},
+): Promise<string> {
   const args = ['diff', '--no-color', '--no-ext-diff'];
   if (options.staged) args.push('--staged');
 
   try {
-    const { stdout } = await runGit(args, { ...(options.cwd ? { cwd: options.cwd } : {}) });
+    const { stdout } = await runGit(args, {
+      ...(options.cwd ? { cwd: options.cwd } : {}),
+    });
     return stdout;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

@@ -23,5 +23,11 @@ export const REVIEW_INSTRUCTIONS: string = [
 ].join('\n');
 
 export function buildReviewInput(diff: string): string {
-  return ['Here is the git diff to review:', '', '```diff', diff.trimEnd(), '```'].join('\n');
+  return [
+    'Here is the git diff to review:',
+    '',
+    '```diff',
+    diff.trimEnd(),
+    '```',
+  ].join('\n');
 }
