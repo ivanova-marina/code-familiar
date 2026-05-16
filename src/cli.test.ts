@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { createReviewAction } from './cli.js';
 
@@ -78,5 +78,45 @@ describe('review command output', () => {
     });
 
     expect(stdout.join('')).toBe('FORMATTED\n');
+  });
+
+  it('includes changed file contents when context is enabled', async () => {
+    const reviewDiffMock = vi.fn(async () => ({
+      kind: 'parsed' as const,
+      review: {
+        summary: 'ok',
+        high_risk_issues: [],
+        suggestions: [],
+        testing_notes: [],
+      },
+    }));
+
+    const getChangedFilesMock = vi.fn(async () => ['src/a.ts']);
+    const readTextFileMock = vi.fn(async () => 'console.log("hi");\n');
+
+    const action = createReviewAction({
+      getGitDiff: async () => 'diff --git a/a b/a\n+hi\n',
+      getChangedFiles: getChangedFilesMock,
+      readTextFile: readTextFileMock,
+      getConfiguredModel: () => 'gpt-4.1-mini',
+      reviewDiff: reviewDiffMock,
+      formatReview: () => 'FORMATTED\n',
+      writeStdout: () => {},
+      writeStderr: () => {},
+    });
+
+    await action({
+      staged: false,
+      printDiff: false,
+      json: false,
+      context: true,
+    });
+
+    expect(getChangedFilesMock).toHaveBeenCalledWith({ staged: false });
+    expect(readTextFileMock).toHaveBeenCalledWith('src/a.ts');
+    expect(reviewDiffMock).toHaveBeenCalledWith('diff --git a/a b/a\n+hi\n', {
+      model: 'gpt-4.1-mini',
+      files: [{ path: 'src/a.ts', content: 'console.log("hi");\n' }],
+    });
   });
 });
