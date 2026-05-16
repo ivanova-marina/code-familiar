@@ -4,7 +4,11 @@ import 'dotenv/config';
 import { Command } from 'commander';
 import { reviewDiff } from './agent/reviewAgent.js';
 import type { Review } from './agent/schemas.js';
-import { getGitDiff, getChangedFiles } from './tools/git.js';
+import {
+  getGitDiff,
+  getChangedFilesWithStatus,
+  type ChangedFileStatus,
+} from './tools/git.js';
 import { getConfiguredModel } from './tools/openai.js';
 import { formatReview } from './formatters/terminalFormatter.js';
 import { readTextFile } from './tools/fileReader.js';
@@ -23,10 +27,10 @@ export type ReviewActionOptions = {
 
 export type ReviewCommandDeps = {
   getGitDiff: (options: { staged: boolean }) => Promise<string>;
-  getChangedFiles: (options: {
-    cwd?: string;
+  getChangedFilesWithStatus: (options: {
     staged?: boolean;
-  }) => Promise<string[]>;
+    cwd?: string;
+  }) => Promise<ChangedFileStatus[]>;
   readTextFile: (
     path: string,
     options?: { maxBytes?: number },
@@ -58,15 +62,25 @@ export function createReviewAction(deps: ReviewCommandDeps) {
 
     const files = options.context
       ? await (async () => {
-          const changed = await deps.getChangedFiles({
+          const changed = await deps.getChangedFilesWithStatus({
             staged: options.staged,
           });
           const limited = changed.slice(0, 10);
           return Promise.all(
-            limited.map(async (p) => ({
-              path: p,
-              content: await deps.readTextFile(p, { maxBytes: 50_000 }),
-            })),
+            limited.map(async (p) => {
+              if (p.status === 'D')
+                return { path: p.path, content: '[File deleted]\n' };
+              const prefix =
+                p.status === 'R' && p.oldPath
+                  ? `Renamed from ${p.oldPath}\n`
+                  : p.status === 'C' && p.oldPath
+                    ? `Copied from ${p.oldPath}\n`
+                    : '';
+              const body = await deps.readTextFile(p.path, {
+                maxBytes: 50_000,
+              });
+              return { path: p.path, content: prefix + body };
+            }),
           );
         })()
       : undefined;
@@ -131,7 +145,7 @@ export async function runCli(argv: readonly string[]): Promise<void> {
     .action(
       createReviewAction({
         getGitDiff,
-        getChangedFiles,
+        getChangedFilesWithStatus,
         readTextFile,
         getConfiguredModel,
         reviewDiff: (diff, options) =>

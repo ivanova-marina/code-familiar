@@ -97,3 +97,52 @@ export async function getChangedFiles(
     throw new Error(`Failed to get changed files. ${message}`);
   }
 }
+
+export type ChangedFileStatus = {
+  path: string;
+  status: 'A' | 'M' | 'D' | 'R' | 'C' | 'T' | 'U' | string;
+  oldPath?: string;
+};
+
+export async function getChangedFilesWithStatus(
+  options: {
+    staged?: boolean;
+    cwd?: string;
+  } = {},
+): Promise<ChangedFileStatus[]> {
+  const args = ['diff', '--name-status'];
+
+  if (options.staged) args.push('--staged');
+
+  try {
+    const { stdout } = await runGit(args, {
+      ...(options.cwd ? { cwd: options.cwd } : {}),
+    });
+    return stdout
+      .split('\n')
+      .map((line): ChangedFileStatus | null => {
+        const [status, ...pathParts] = line.trim().split('\t');
+        if (!status || pathParts.length === 0) return null;
+
+        const code = status[0] ?? status;
+        const path = pathParts[pathParts.length - 1] ?? '';
+        if (!path) return null;
+
+        const oldPath = pathParts.length > 1 ? pathParts[0] : undefined;
+        if (code === 'D') return { status: 'D', path };
+        if (code === 'R' || code === 'C') {
+          return oldPath
+            ? { status: code, path, oldPath }
+            : { status: code, path };
+        }
+
+        return oldPath
+          ? { status: code, path, oldPath }
+          : { status: code, path };
+      })
+      .filter((entry): entry is ChangedFileStatus => entry !== null);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to get changed files with status. ${message}`);
+  }
+}

@@ -9,7 +9,7 @@ describe('review command output', () => {
 
     const action = createReviewAction({
       getGitDiff: async () => 'diff --git a/a b/a\n+hi\n',
-      getChangedFiles: async () => [],
+      getChangedFilesWithStatus: async () => [],
       readTextFile: async () => '',
       getConfiguredModel: () => 'gpt-4.1-mini',
       reviewDiff: async () => ({
@@ -53,7 +53,7 @@ describe('review command output', () => {
 
     const action = createReviewAction({
       getGitDiff: async () => 'diff --git a/a b/a\n+hi\n',
-      getChangedFiles: async () => [],
+      getChangedFilesWithStatus: async () => [],
       readTextFile: async () => '',
       getConfiguredModel: () => 'gpt-4.1-mini',
       reviewDiff: async () => ({
@@ -91,12 +91,14 @@ describe('review command output', () => {
       },
     }));
 
-    const getChangedFilesMock = vi.fn(async () => ['src/a.ts']);
+    const getChangedFilesWithStatusMock = vi.fn(async () => [
+      { status: 'M', path: 'src/a.ts' },
+    ]);
     const readTextFileMock = vi.fn(async () => 'console.log("hi");\n');
 
     const action = createReviewAction({
       getGitDiff: async () => 'diff --git a/a b/a\n+hi\n',
-      getChangedFiles: getChangedFilesMock,
+      getChangedFilesWithStatus: getChangedFilesWithStatusMock,
       readTextFile: readTextFileMock,
       getConfiguredModel: () => 'gpt-4.1-mini',
       reviewDiff: reviewDiffMock,
@@ -112,7 +114,9 @@ describe('review command output', () => {
       context: true,
     });
 
-    expect(getChangedFilesMock).toHaveBeenCalledWith({ staged: false });
+    expect(getChangedFilesWithStatusMock).toHaveBeenCalledWith({
+      staged: false,
+    });
     expect(readTextFileMock).toHaveBeenCalledWith('src/a.ts', {
       maxBytes: 50_000,
     });
