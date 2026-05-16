@@ -1,12 +1,17 @@
 import { zodTextFormat } from 'openai/helpers/zod.js';
 import type { OpenAIClient } from '../tools/openai.js';
 import { getOpenAIClient } from '../tools/openai.js';
-import { buildReviewInput, REVIEW_INSTRUCTIONS } from './prompts.js';
+import {
+  buildFileContext,
+  buildReviewInput,
+  REVIEW_INSTRUCTIONS,
+} from './prompts.js';
 import { type Review, ReviewSchema } from './schemas.js';
 
 export type ReviewOptions = {
   model: string;
   client?: OpenAIClient;
+  files?: Array<{ path: string; content: string }>;
 };
 
 export async function reviewDiff(
@@ -21,11 +26,12 @@ export async function reviewDiff(
   }
 
   const client = options.client ?? getOpenAIClient();
+
   try {
     const response = await client.responses.parse({
       model: options.model,
       instructions: REVIEW_INSTRUCTIONS,
-      input: buildReviewInput(diff),
+      input: buildReviewInput(diff, buildFileContext(options.files ?? [])),
       text: { format: zodTextFormat(ReviewSchema, 'pr_review') },
     });
 
@@ -41,7 +47,7 @@ export async function reviewDiff(
     const fallback = await client.responses.create({
       model: options.model,
       instructions: REVIEW_INSTRUCTIONS,
-      input: buildReviewInput(diff),
+      input: buildReviewInput(diff, buildFileContext(options.files ?? [])),
     });
 
     const raw = fallback.output_text.trim();

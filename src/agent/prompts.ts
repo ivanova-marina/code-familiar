@@ -23,12 +23,30 @@ export const REVIEW_INSTRUCTIONS: string = [
   '- high_risk_issues/suggestions/testing_notes: arrays of short bullet-like strings; use [] if none.',
 ].join('\n');
 
-export function buildReviewInput(diff: string): string {
+export function buildReviewInput(diff: string, fileContext?: string): string {
   return [
     'Here is the git diff to review:',
     '',
     '```diff',
     diff.trimEnd(),
     '```',
+    '',
+    fileContext?.trimEnd() ?? '',
+  ].join('\n');
+}
+
+export function buildFileContext(
+  files: Array<{ path: string; content: string }>,
+): string {
+  if (files.length === 0) return '';
+  return [
+    'Here is additional context for the review:',
+    '',
+    ...files.flatMap((file) => {
+      if (file.content === '[File missing on disk]') {
+        return [`--- ${file.path} ---`, `[File missing on disk]`, ``];
+      }
+      return [`--- ${file.path} ---`, '```', file.content.trimEnd(), '```', ''];
+    }),
   ].join('\n');
 }
