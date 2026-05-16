@@ -13,7 +13,8 @@ export async function reviewDiff(
   diff: string,
   options: ReviewOptions,
 ): Promise<
-  { kind: 'parsed'; review: Review } | { kind: 'text'; review: string }
+  | { kind: 'parsed'; review: Review }
+  | { kind: 'text'; review: string; reason: 'unparsed' | 'parse_error' }
 > {
   if (diff.trim().length === 0) {
     throw new Error('No diff provided.');
@@ -32,7 +33,7 @@ export async function reviewDiff(
     if (!parsed) {
       const raw = response.output_text.trim();
       if (!raw) throw new Error('OpenAI returned an empty review.');
-      return { kind: 'text', review: raw };
+      return { kind: 'text', review: raw, reason: 'unparsed' };
     }
 
     return { kind: 'parsed', review: parsed };
@@ -45,6 +46,6 @@ export async function reviewDiff(
 
     const raw = fallback.output_text.trim();
     if (!raw) throw new Error('OpenAI returned an empty review.');
-    return { kind: 'text', review: raw };
+    return { kind: 'text', review: raw, reason: 'parse_error' };
   }
 }

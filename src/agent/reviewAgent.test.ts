@@ -53,7 +53,11 @@ describe('reviewDiff', () => {
       client,
     });
 
-    expect(result).toEqual({ kind: 'text', review: 'Great.' });
+    expect(result).toEqual({
+      kind: 'text',
+      review: 'Great.',
+      reason: 'unparsed',
+    });
   });
 
   it('throws on empty diff', async () => {

@@ -10,7 +10,7 @@ import { formatReview } from './formatters/terminalFormatter.js';
 
 export type ReviewDiffResult =
   | { kind: 'parsed'; review: Review }
-  | { kind: 'text'; review: string };
+  | { kind: 'text'; review: string; reason: 'unparsed' | 'parse_error' };
 
 export type ReviewActionOptions = {
   staged: boolean;
@@ -47,9 +47,11 @@ export function createReviewAction(deps: ReviewCommandDeps) {
     const result = await deps.reviewDiff(diff, { model });
 
     if (result.kind === 'text') {
-      deps.writeStderr(
-        'Warning: Structured output failed, printing raw model text.\n',
-      );
+      const message =
+        result.reason === 'unparsed'
+          ? 'Warning: Model output did not match the structured schema; printing raw text.\n'
+          : 'Warning: Structured output parsing failed; printing fallback raw text.\n';
+      deps.writeStderr(message);
       deps.writeStdout(
         result.review.endsWith('\n') ? result.review : `${result.review}\n`,
       );
