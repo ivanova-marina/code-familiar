@@ -42,12 +42,11 @@ export function buildFileContext(
   return [
     'Here is additional context for the review:',
     '',
-    ...files.flatMap((file) => [
-      `--- ${file.path} ---`,
-      '```',
-      file.content.trimEnd(),
-      '```',
-      '',
-    ]),
+    ...files.flatMap((file) => {
+      if (file.content === '[File missing on disk]') {
+        return [`--- ${file.path} ---`, `[File missing on disk]`, ``];
+      }
+      return [`--- ${file.path} ---`, '```', file.content.trimEnd(), '```', ''];
+    }),
   ].join('\n');
 }
