@@ -9,17 +9,18 @@ export const REVIEW_INSTRUCTIONS: string = [
   '- TypeScript clarity and type safety',
   '- missing or weak tests',
   '- readability and maintainability',
+  '- review only what’s in the diff; don’t assume other context',
   '',
   'Avoid:',
   '- vague feedback',
   '- excessive nitpicks',
   '- rewriting large files without need',
   '',
-  'Return plain text with this structure (use headings and bullets):',
-  'Summary:',
-  'High-risk issues:',
-  'Suggestions:',
-  'Testing notes:',
+  'Output rules:',
+  '- Return JSON only (no markdown, no code fences, no extra text).',
+  '- Use these keys: summary, high_risk_issues, suggestions, testing_notes.',
+  '- summary: 1–3 sentences.',
+  '- high_risk_issues/suggestions/testing_notes: arrays of short bullet-like strings; use [] if none.',
 ].join('\n');
 
 export function buildReviewInput(diff: string): string {

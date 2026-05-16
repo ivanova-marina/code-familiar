@@ -20,22 +20,31 @@ export async function reviewDiff(
   }
 
   const client = options.client ?? getOpenAIClient();
-  const response = await client.responses.parse({
-    model: options.model,
-    instructions: `${REVIEW_INSTRUCTIONS}\n\nOutput JSON only matching the schema.`,
-    input: buildReviewInput(diff),
-    text: { format: zodTextFormat(ReviewSchema, 'pr_review') },
-  });
+  try {
+    const response = await client.responses.parse({
+      model: options.model,
+      instructions: REVIEW_INSTRUCTIONS,
+      input: buildReviewInput(diff),
+      text: { format: zodTextFormat(ReviewSchema, 'pr_review') },
+    });
 
-  const parsedReview = response.output_parsed;
-
-  if (parsedReview === null) {
-    const fallbackText = response.output_text;
-    if (fallbackText.trim().length === 0) {
-      throw new Error('OpenAI returned an empty review.');
+    const parsed = response.output_parsed;
+    if (!parsed) {
+      const raw = response.output_text.trim();
+      if (!raw) throw new Error('OpenAI returned an empty review.');
+      return { kind: 'text', review: raw };
     }
-    return { kind: 'text', review: fallbackText.trim() };
-  }
 
-  return { kind: 'parsed', review: parsedReview };
+    return { kind: 'parsed', review: parsed };
+  } catch {
+    const fallback = await client.responses.create({
+      model: options.model,
+      instructions: REVIEW_INSTRUCTIONS,
+      input: buildReviewInput(diff),
+    });
+
+    const raw = fallback.output_text.trim();
+    if (!raw) throw new Error('OpenAI returned an empty review.');
+    return { kind: 'text', review: raw };
+  }
 }

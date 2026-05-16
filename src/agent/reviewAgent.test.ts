@@ -67,7 +67,9 @@ describe('reviewDiff', () => {
   });
 
   it('throws if parse fails and output_text is empty/whitespace', async () => {
-    const create = vi.fn();
+    const create = vi.fn().mockResolvedValue({
+      output_text: '   \n',
+    });
     const parse = vi.fn().mockResolvedValue({
       output_text: '   \n',
       output_parsed: null,
@@ -78,5 +80,7 @@ describe('reviewDiff', () => {
     await expect(
       reviewDiff('diff --git a/a b/a\n', { model: 'gpt-4.1-mini', client }),
     ).rejects.toThrow(/empty review/i);
+
+    expect(create).toHaveBeenCalledTimes(1);
   });
 });
