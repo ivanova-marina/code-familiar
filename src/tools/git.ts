@@ -78,3 +78,22 @@ export async function getGitDiff(
     throw new Error(`Failed to read git diff. ${message}`);
   }
 }
+
+export async function getChangedFiles(
+  options: { cwd?: string; staged?: boolean } = {},
+): Promise<string[]> {
+  const args = ['diff', '--name-only'];
+  if (options.staged) args.push('--staged');
+  try {
+    const { stdout } = await runGit(args, {
+      ...(options.cwd ? { cwd: options.cwd } : {}),
+    });
+    return stdout
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to get changed files. ${message}`);
+  }
+}
