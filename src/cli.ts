@@ -4,9 +4,10 @@ import 'dotenv/config';
 import { Command } from 'commander';
 import { reviewDiff } from './agent/reviewAgent.js';
 import type { Review } from './agent/schemas.js';
-import { getGitDiff } from './tools/git.js';
+import { getGitDiff, getChangedFiles } from './tools/git.js';
 import { getConfiguredModel } from './tools/openai.js';
 import { formatReview } from './formatters/terminalFormatter.js';
+import { readTextFile } from './tools/fileReader.js';
 
 export type ReviewDiffResult =
   | { kind: 'parsed'; review: Review }
@@ -16,15 +17,24 @@ export type ReviewActionOptions = {
   staged: boolean;
   model?: string;
   printDiff: boolean;
+  context: boolean;
   json: boolean;
 };
 
 export type ReviewCommandDeps = {
   getGitDiff: (options: { staged: boolean }) => Promise<string>;
+  getChangedFiles: (options: {
+    cwd?: string;
+    staged?: boolean;
+  }) => Promise<string[]>;
+  readTextFile: (path: string) => Promise<string>;
   getConfiguredModel: (cliModel: string | undefined) => string;
   reviewDiff: (
     diff: string,
-    options: { model: string },
+    options: {
+      model: string;
+      files?: Array<{ path: string; content: string }>;
+    },
   ) => Promise<ReviewDiffResult>;
   formatReview: (review: Review) => string;
   writeStdout: (text: string) => void;
@@ -43,8 +53,24 @@ export function createReviewAction(deps: ReviewCommandDeps) {
       deps.writeStderr(diff.endsWith('\n') ? diff : `${diff}\n`);
     }
 
+    const files = options.context
+      ? await (async () => {
+          const changed = await deps.getChangedFiles({
+            staged: options.staged,
+          });
+          const limited = changed.slice(0, 10);
+          return Promise.all(
+            limited.map(async (p) => ({
+              path: p,
+              content: await deps.readTextFile(p),
+            })),
+          );
+        })()
+      : undefined;
+
     const model = deps.getConfiguredModel(options.model);
-    const result = await deps.reviewDiff(diff, { model });
+    const reviewOptions = files ? { model, files } : { model };
+    const result = await deps.reviewDiff(diff, reviewOptions);
 
     if (result.kind === 'text') {
       const message =
@@ -95,11 +121,23 @@ export async function runCli(argv: readonly string[]): Promise<void> {
       'Output the review as JSON (with summary, high_risk_issues, suggestions, testing_notes) instead of plain text.',
       false,
     )
+    .option(
+      '--no-context',
+      'Do not include changed files as additional context for review (only review the diff).',
+    )
     .action(
       createReviewAction({
         getGitDiff,
+        getChangedFiles,
+        readTextFile,
         getConfiguredModel,
-        reviewDiff,
+        reviewDiff: (diff, options) =>
+          reviewDiff(
+            diff,
+            options.files
+              ? { model: options.model, files: options.files }
+              : { model: options.model },
+          ),
         formatReview,
         writeStdout: (text) => {
           process.stdout.write(text);

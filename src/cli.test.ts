@@ -9,6 +9,8 @@ describe('review command output', () => {
 
     const action = createReviewAction({
       getGitDiff: async () => 'diff --git a/a b/a\n+hi\n',
+      getChangedFiles: async () => [],
+      readTextFile: async () => '',
       getConfiguredModel: () => 'gpt-4.1-mini',
       reviewDiff: async () => ({
         kind: 'parsed',
@@ -24,7 +26,12 @@ describe('review command output', () => {
       writeStderr: (text) => stderr.push(text),
     });
 
-    await action({ staged: false, printDiff: false, json: true });
+    await action({
+      staged: false,
+      printDiff: false,
+      json: true,
+      context: false,
+    });
 
     expect(stderr.join('')).toBe('');
     expect(stdout.join('')).toBe(
@@ -46,6 +53,8 @@ describe('review command output', () => {
 
     const action = createReviewAction({
       getGitDiff: async () => 'diff --git a/a b/a\n+hi\n',
+      getChangedFiles: async () => [],
+      readTextFile: async () => '',
       getConfiguredModel: () => 'gpt-4.1-mini',
       reviewDiff: async () => ({
         kind: 'parsed',
@@ -61,7 +70,12 @@ describe('review command output', () => {
       writeStderr: () => {},
     });
 
-    await action({ staged: false, printDiff: false, json: false });
+    await action({
+      staged: false,
+      printDiff: false,
+      json: false,
+      context: false,
+    });
 
     expect(stdout.join('')).toBe('FORMATTED\n');
   });
