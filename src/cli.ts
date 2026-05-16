@@ -28,11 +28,17 @@ export async function runCli(argv: readonly string[]): Promise<void> {
       'Print the raw git diff to stderr before the review.',
       false,
     )
+    .option(
+      '--json',
+      'Output the review as JSON (with summary, high_risk_issues, suggestions, testing_notes) instead of plain text.',
+      false,
+    )
     .action(
       async (options: {
         staged: boolean;
         model?: string;
         printDiff: boolean;
+        json: boolean;
       }) => {
         const diff = await getGitDiff({ staged: options.staged });
         if (diff.trim().length === 0) {
@@ -45,8 +51,31 @@ export async function runCli(argv: readonly string[]): Promise<void> {
         }
 
         const model = getConfiguredModel(options.model);
-        const review = await reviewDiff(diff, { model });
-        process.stdout.write(review.endsWith('\n') ? review : `${review}\n`);
+        const result = await reviewDiff(diff, { model });
+        // result kind === 'text'
+        if (result.kind === 'text') {
+          process.stderr.write(
+            'Warning: Structured output failed, printing raw model text.\n',
+          );
+          process.stdout.write(
+            result.review.endsWith('\n') ? result.review : `${result.review}\n`,
+          );
+          return;
+        }
+
+        // result kind === 'parsed'
+        if (options.json) {
+          const jsonOutput = JSON.stringify(result.review, null, 2);
+          process.stdout.write(`${jsonOutput}\n`);
+          return;
+        }
+
+        // TODO: implement formatReview() in terminalFormatter.ts and use it here instead of just printing the summary
+        process.stdout.write(
+          result.review.summary.endsWith('\n')
+            ? result.review.summary
+            : `${result.review.summary}\n`,
+        );
       },
     );
 

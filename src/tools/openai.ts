@@ -1,8 +1,12 @@
 import OpenAI from 'openai';
+import { type Review } from '../agent/schemas';
 
 export type OpenAIClient = {
   responses: {
     create: (args: unknown) => Promise<{ output_text: string }>;
+    parse: (
+      args: unknown,
+    ) => Promise<{ output_text: string; output_parsed: Review | null }>;
   };
 };
 
@@ -23,8 +27,5 @@ export function getOpenAIClient(): OpenAIClient {
 }
 
 export function getConfiguredModel(cliModel: string | undefined): string {
-  if (!cliModel) {
-    return process.env.CODE_FAMILIAR_MODEL ?? 'gpt-4.1-mini';
-  }
-  return cliModel;
+  return cliModel ?? process.env.CODE_FAMILIAR_MODEL ?? 'gpt-4.1-mini';
 }
