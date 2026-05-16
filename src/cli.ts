@@ -27,7 +27,10 @@ export type ReviewCommandDeps = {
     cwd?: string;
     staged?: boolean;
   }) => Promise<string[]>;
-  readTextFile: (path: string) => Promise<string>;
+  readTextFile: (
+    path: string,
+    options?: { maxBytes?: number },
+  ) => Promise<string>;
   getConfiguredModel: (cliModel: string | undefined) => string;
   reviewDiff: (
     diff: string,
@@ -62,7 +65,7 @@ export function createReviewAction(deps: ReviewCommandDeps) {
           return Promise.all(
             limited.map(async (p) => ({
               path: p,
-              content: await deps.readTextFile(p),
+              content: await deps.readTextFile(p, { maxBytes: 50_000 }),
             })),
           );
         })()

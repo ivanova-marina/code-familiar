@@ -43,7 +43,7 @@ export function buildFileContext(
     'Here is additional context for the review:',
     '',
     ...files.flatMap((file) => [
-      `File: ${file.path}`,
+      `--- ${file.path} ---`,
       '```',
       file.content.trimEnd(),
       '```',

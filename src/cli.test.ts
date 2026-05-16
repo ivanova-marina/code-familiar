@@ -113,7 +113,9 @@ describe('review command output', () => {
     });
 
     expect(getChangedFilesMock).toHaveBeenCalledWith({ staged: false });
-    expect(readTextFileMock).toHaveBeenCalledWith('src/a.ts');
+    expect(readTextFileMock).toHaveBeenCalledWith('src/a.ts', {
+      maxBytes: 50_000,
+    });
     expect(reviewDiffMock).toHaveBeenCalledWith('diff --git a/a b/a\n+hi\n', {
       model: 'gpt-4.1-mini',
       files: [{ path: 'src/a.ts', content: 'console.log("hi");\n' }],
