@@ -5,6 +5,7 @@ import { Command } from 'commander';
 import { reviewDiff } from './agent/reviewAgent.js';
 import { getGitDiff } from './tools/git.js';
 import { getConfiguredModel } from './tools/openai.js';
+import { formatReview } from './formatters/terminalFormatter.js';
 
 export async function runCli(argv: readonly string[]): Promise<void> {
   const program = new Command();
@@ -70,11 +71,10 @@ export async function runCli(argv: readonly string[]): Promise<void> {
           return;
         }
 
-        // TODO: implement formatReview() in terminalFormatter.ts and use it here instead of just printing the summary
+        const formatted = formatReview(result.review);
+
         process.stdout.write(
-          result.review.summary.endsWith('\n')
-            ? result.review.summary
-            : `${result.review.summary}\n`,
+          formatted.endsWith('\n') ? formatted : formatted + '\n',
         );
       },
     );
