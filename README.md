@@ -4,8 +4,9 @@ Code Familiar is a TypeScript CLI that reviews frontend pull requests by:
 
 1. Reading your current `git diff`
 2. Optionally reading changed files for extra context
-3. Sending that context to the OpenAI API
-4. Printing a structured review (formatted text by default, or JSON)
+3. Letting the model request approved local tools during review
+4. Sending context/tool results to the OpenAI API
+5. Printing a structured review (formatted text by default, or JSON)
 
 This is a learning project built milestone-by-milestone (see `AGENTS.md`).
 
@@ -58,6 +59,15 @@ When context is enabled (default), the CLI reads a limited amount of extra conte
 - Deleted files are labeled as `[File deleted]`
 - Renames/copies include a short note plus the new-path content
 
+### Agent loop
+
+The review agent can expose a small set of local tools to the model:
+
+- `get_git_diff`: read the current repository diff
+- `read_file`: read a repository text file for additional context
+
+Tool calls are bounded by a maximum iteration count so the review cannot loop forever.
+
 ## Development
 
 ```bash
@@ -76,6 +86,7 @@ src/
     reviewAgent.ts
     prompts.ts
     schemas.ts
+    tools.ts
   tools/
     git.ts
     fileReader.ts
@@ -92,7 +103,7 @@ This project is built milestone-by-milestone. Completed milestones may vary by b
 - Milestone 2 — LLM Integration (done)
 - Milestone 3 — Structured Output (done)
 - Milestone 4 — Tool-Aware Agent (done)
-- Milestone 5 — Agent Loop (WIP): allow the model to request tools iteratively until a final review is produced
+- Milestone 5 — Agent Loop (done): allow the model to request tools iteratively until a final review is produced
 - Milestone 6 — Evals (WIP): create sample diffs + expected outputs and measure quality
 - Milestone 7 — Human Approval (WIP): require confirmation before high-impact actions
 - Milestone 8 — Web Dashboard (Optional/WIP): React/Next.js UI for viewing reviews and evals
