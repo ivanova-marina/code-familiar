@@ -1,12 +1,21 @@
 import OpenAI from 'openai';
 import { type Review } from '../agent/schemas';
 
+export type OpenAIResponseOutputItem = {
+  type: string;
+  name?: string;
+  arguments?: string;
+  call_id?: string;
+};
+
 export type OpenAIClient = {
   responses: {
     create: (args: unknown) => Promise<{ output_text: string }>;
-    parse: (
-      args: unknown,
-    ) => Promise<{ output_text: string; output_parsed: Review | null }>;
+    parse: (args: unknown) => Promise<{
+      output_text: string;
+      output_parsed: Review | null;
+      output?: OpenAIResponseOutputItem[];
+    }>;
   };
 };
 

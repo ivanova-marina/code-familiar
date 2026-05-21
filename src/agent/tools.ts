@@ -7,6 +7,43 @@ export const AGENT_TOOL_NAMES = {
   readFile: 'read_file',
 } as const;
 
+export const AGENT_TOOL_DEFINITIONS = [
+  {
+    type: 'function',
+    name: AGENT_TOOL_NAMES.getGitDiff,
+    description: 'Read the current git diff for the repository.',
+    parameters: {
+      type: 'object',
+      properties: {
+        staged: {
+          type: 'boolean',
+          description: 'Whether to read staged changes only.',
+        },
+      },
+      required: ['staged'],
+      additionalProperties: false,
+    },
+    strict: true,
+  },
+  {
+    type: 'function',
+    name: AGENT_TOOL_NAMES.readFile,
+    description: 'Read a text file from the repository for review context.',
+    parameters: {
+      type: 'object',
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Repository-relative path to the file.',
+        },
+      },
+      required: ['path'],
+      additionalProperties: false,
+    },
+    strict: true,
+  },
+] as const;
+
 export const GetGitDiffArgsSchema = z.object({
   staged: z.boolean().default(false),
 });

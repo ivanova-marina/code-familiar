@@ -1,6 +1,18 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { reviewDiff } from './reviewAgent.js';
+import { executeAgentTool } from './tools.js';
+
+vi.mock('./tools.js', () => ({
+  AGENT_TOOL_DEFINITIONS: [
+    {
+      type: 'function',
+      name: 'read_file',
+      description: 'Read a text file from the repository for review context.',
+    },
+  ],
+  executeAgentTool: vi.fn(),
+}));
 
 const mockParsed = {
   summary: 'Looks good',
@@ -10,6 +22,10 @@ const mockParsed = {
 };
 
 describe('reviewDiff', () => {
+  beforeEach(() => {
+    vi.mocked(executeAgentTool).mockReset();
+  });
+
   it('calls Responses parse() with model/instructions/input and returns parsed review', async () => {
     const create = vi.fn();
     const parse = vi.fn().mockResolvedValue({
@@ -31,6 +47,7 @@ describe('reviewDiff', () => {
     expect(String(args.input)).toContain('diff --git');
     expect(typeof args.instructions).toBe('string');
     expect(args.text).toBeTruthy();
+    expect(args.tools).toBeTruthy();
 
     expect(result.kind).toBe('parsed');
     if (result.kind === 'parsed') {
@@ -58,6 +75,117 @@ describe('reviewDiff', () => {
       review: 'Great.',
       reason: 'unparsed',
     });
+  });
+
+  it('executes function calls and sends tool outputs into the next iteration', async () => {
+    vi.mocked(executeAgentTool).mockResolvedValueOnce('[mock file content]');
+
+    const create = vi.fn();
+    const parse = vi
+      .fn()
+      .mockResolvedValueOnce({
+        output_text: '',
+        output_parsed: null,
+        output: [
+          {
+            type: 'function_call',
+            name: 'read_file',
+            call_id: 'call_1',
+            arguments: '{"path":"src/a.ts"}',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        output_text: 'ignored when parsed exists',
+        output_parsed: mockParsed,
+      });
+
+    const client = { responses: { create, parse } };
+
+    const result = await reviewDiff('diff --git a/a b/a\n', {
+      model: 'gpt-4.1-mini',
+      client,
+    });
+
+    expect(result).toEqual({ kind: 'parsed', review: mockParsed });
+    expect(parse).toHaveBeenCalledTimes(2);
+    expect(create).not.toHaveBeenCalled();
+    expect(executeAgentTool).toHaveBeenCalledWith('read_file', {
+      path: 'src/a.ts',
+    });
+
+    const secondCallArgs = parse.mock.calls[1]?.[0] as Record<string, unknown>;
+    expect(secondCallArgs.input).toEqual([
+      {
+        type: 'function_call_output',
+        call_id: 'call_1',
+        output: '[mock file content]',
+      },
+    ]);
+  });
+
+  it('falls back to raw text when a function call is malformed', async () => {
+    const create = vi.fn().mockResolvedValue({
+      output_text: '\n  Fallback review.\n',
+    });
+    const parse = vi.fn().mockResolvedValueOnce({
+      output_text: '',
+      output_parsed: null,
+      output: [
+        {
+          type: 'function_call',
+          arguments: '{}',
+        },
+      ],
+    });
+
+    const client = { responses: { create, parse } };
+
+    const result = await reviewDiff('diff --git a/a b/a\n', {
+      model: 'gpt-4.1-mini',
+      client,
+    });
+
+    expect(result).toEqual({
+      kind: 'text',
+      review: 'Fallback review.',
+      reason: 'parse_error',
+    });
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(executeAgentTool).not.toHaveBeenCalled();
+  });
+
+  it('falls back to raw text when function call arguments are invalid JSON', async () => {
+    const create = vi.fn().mockResolvedValue({
+      output_text: 'Fallback after invalid JSON.',
+    });
+    const parse = vi.fn().mockResolvedValueOnce({
+      output_text: '',
+      output_parsed: null,
+      output: [
+        {
+          type: 'function_call',
+          name: 'read_file',
+          call_id: 'call_1',
+          arguments: '{bad json',
+        },
+      ],
+    });
+
+    const client = { responses: { create, parse } };
+
+    const result = await reviewDiff('diff --git a/a b/a\n', {
+      model: 'gpt-4.1-mini',
+      client,
+    });
+
+    expect(result).toEqual({
+      kind: 'text',
+      review: 'Fallback after invalid JSON.',
+      reason: 'parse_error',
+    });
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(executeAgentTool).not.toHaveBeenCalled();
   });
 
   it('throws on empty diff', async () => {
