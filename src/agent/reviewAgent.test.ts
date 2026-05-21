@@ -84,6 +84,7 @@ describe('reviewDiff', () => {
     const parse = vi
       .fn()
       .mockResolvedValueOnce({
+        id: 'response_1',
         output_text: '',
         output_parsed: null,
         output: [
@@ -122,6 +123,25 @@ describe('reviewDiff', () => {
         output: '[mock file content]',
       },
     ]);
+    expect(secondCallArgs.previous_response_id).toBe('response_1');
+  });
+
+  it('does not send previous_response_id on the first iteration', async () => {
+    const create = vi.fn();
+    const parse = vi.fn().mockResolvedValueOnce({
+      output_text: 'ignored when parsed exists',
+      output_parsed: mockParsed,
+    });
+
+    const client = { responses: { create, parse } };
+
+    await reviewDiff('diff --git a/a b/a\n', {
+      model: 'gpt-4.1-mini',
+      client,
+    });
+
+    const firstCallArgs = parse.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(firstCallArgs.previous_response_id).toBeUndefined();
   });
 
   it('falls back to raw text when a function call is malformed', async () => {

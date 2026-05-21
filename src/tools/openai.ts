@@ -12,6 +12,7 @@ export type OpenAIClient = {
   responses: {
     create: (args: unknown) => Promise<{ output_text: string }>;
     parse: (args: unknown) => Promise<{
+      id?: string;
       output_text: string;
       output_parsed: Review | null;
       output?: OpenAIResponseOutputItem[];

@@ -69,15 +69,21 @@ export async function reviewDiff(
       diff,
       buildFileContext(options.files ?? []),
     );
+    let previousResponseId: string | undefined;
 
     for (let iteration = 0; iteration < MAX_AGENT_ITERATIONS; iteration += 1) {
-      const response = await client.responses.parse({
+      const request = {
         tools: AGENT_TOOL_DEFINITIONS,
         model: options.model,
         instructions: REVIEW_INSTRUCTIONS,
         input,
         text: { format: zodTextFormat(ReviewSchema, 'pr_review') },
-      });
+        ...(previousResponseId
+          ? { previous_response_id: previousResponseId }
+          : {}),
+      };
+      const response = await client.responses.parse(request);
+      previousResponseId = response.id ?? previousResponseId;
 
       const parsed = response.output_parsed;
       if (parsed) {
